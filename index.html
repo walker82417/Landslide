@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Landslide Alert System</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCbS2AgYD-GXKvs9U0x06qF_O9d165ManM"></script>
+  <style>
+    /* Style for the map */
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    /* Fullscreen container for the map */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center;">Landslide Alert System</h1>
+  <div id="map"></div>
+
+  <script>
+    const thingSpeakChannelID = "2735463"; // Replace with your ThingSpeak channel ID
+    const thingSpeakReadAPIKey = "9W842J9OQK6WNR5F"; // Replace with your ThingSpeak read API key
+
+    // Initialize the map
+    function initMap() {
+      // Set a default location in case no data is available
+      const defaultLocation = { lat: latitude , lng: longitude };
+
+      // Create the map and center it on the default location
+      const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 10,
+        center: defaultLocation,
+      });
+
+      // Place a default marker
+      const marker = new google.maps.Marker({
+        position: defaultLocation,
+        map: map,
+        title: "Default Location",
+      });
+
+      // Fetch the latest data from ThingSpeak every 20 seconds
+      setInterval(() => {
+        fetchDataFromThingSpeak(map, marker);
+      }, 20000);
+
+      // Fetch data immediately on page load
+      fetchDataFromThingSpeak(map, marker);
+    }
+
+    // Fetch data from ThingSpeak
+    function fetchDataFromThingSpeak(map, marker) {
+      const url = `https://api.thingspeak.com/channels/${thingSpeakChannelID}/feeds.json?results=1&api_key=${thingSpeakReadAPIKey}`;
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          // Extract the latest data point
+          const latestEntry = data.feeds[0];
+          const latitude = parseFloat(latestEntry.field1); // Replace field1 with your latitude field
+          const longitude = parseFloat(latestEntry.field2); // Replace field2 with your longitude field
+
+          if (!isNaN(latitude) && !isNaN(longitude)) {
+            const location = { lat: latitude, lng: longitude };
+
+            // Update the marker position
+            marker.setPosition(location);
+
+            // Center the map on the new location
+            map.setCenter(location);
+
+            // Update marker title with alert message
+            marker.setTitle("Landslide Alert! Location Updated.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching data from ThingSpeak:", error);
+        });
+    }
+
+    // Load the map on page load
+    window.onload = initMap;
+  </script>
+</body>
+</html>
